@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Content Optimization Matrix — sorting activity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0D1B4C; --ink-70:#4A5478; --ink-45:#7C84A0;
+  --paper:#F7F7F4; --surface:#FFFFFF; --rule:#DEDEDA;
+  --signal:#E8112D;
+  --star:#1D7A5F; --star-bg:#E8F2EE;
+  --opp:#2A6BB8;  --opp-bg:#E7EEF8;
+  --cow:#B4741A;  --cow-bg:#F8F0E2;
+  --dog:#6B6B76;  --dog-bg:#EFEFF1;
+  --sans:'IBM Plex Sans',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding:32px 24px 72px}
+
+header{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:28px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-45);margin:0 0 6px}
+h1{font-size:clamp(26px,3.4vw,40px);font-weight:700;letter-spacing:-.02em;margin:0 0 10px;line-height:1.1}
+.lede{margin:0;max-width:62ch;color:var(--ink-70)}
+
+.axes{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.axis{font-family:var(--mono);font-size:12px;background:var(--surface);border:1px solid var(--rule);
+  padding:7px 12px;border-radius:2px}
+.axis b{font-weight:600;color:var(--ink)}
+.axis span{color:var(--ink-45)}
+
+.cols{display:grid;grid-template-columns:1fr 340px;gap:28px;align-items:start}
+@media(max-width:900px){.cols{grid-template-columns:1fr}}
+
+.boardwrap{position:relative;padding-left:34px;padding-bottom:30px}
+.ylab,.xlab{position:absolute;font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-45)}
+.ylab{left:0;top:50%;transform:translateY(-50%) rotate(180deg);writing-mode:vertical-rl}
+.xlab{bottom:4px;left:50%;transform:translateX(-50%)}
+.board{display:grid;grid-template-columns:1fr 1fr;gap:3px;background:var(--ink);
+  border:3px solid var(--ink);border-radius:3px;min-height:600px}
+.cell{background:var(--surface);padding:14px;min-height:290px;display:flex;flex-direction:column;
+  border:none;text-align:left;font:inherit;color:inherit;cursor:default;transition:background .18s}
+.cell.armed{cursor:pointer}
+.cell.armed:hover,.cell.armed:focus-visible{background:var(--paper)}
+.cell:focus-visible{outline:3px solid var(--signal);outline-offset:-3px}
+.cell h3{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+  margin:0;font-weight:600}
+.cell .rule{font-size:12px;color:var(--ink-45);margin:3px 0 12px;line-height:1.4}
+.cell[data-q=star] h3{color:var(--star)} .cell[data-q=opp] h3{color:var(--opp)}
+.cell[data-q=cow] h3{color:var(--cow)}  .cell[data-q=dog] h3{color:var(--dog)}
+.cell.flash-ok{background:var(--star-bg)}
+.cell.flash-no{background:#FDECEE}
+
+.slot{border-radius:2px;padding:8px 10px;margin-bottom:6px;font-size:13px}
+.slot b{display:block;font-weight:600}
+.slot .fig{font-family:var(--mono);font-size:11px;color:var(--ink-70);margin-top:2px}
+.slot[data-q=star]{background:var(--star-bg)} .slot[data-q=opp]{background:var(--opp-bg)}
+.slot[data-q=cow]{background:var(--cow-bg)}  .slot[data-q=dog]{background:var(--dog-bg)}
+.bar{height:5px;border-radius:3px;margin-top:6px;background:var(--ink);opacity:.16;width:0;
+  transition:width .7s cubic-bezier(.2,.7,.3,1)}
+.revealed .bar{opacity:1}
+.slot[data-q=star] .bar{background:var(--star)} .slot[data-q=opp] .bar{background:var(--opp)}
+.slot[data-q=cow] .bar{background:var(--cow)}  .slot[data-q=dog] .bar{background:var(--dog)}
+.rps{display:none;font-family:var(--mono);font-size:11px;color:var(--ink);margin-top:4px;font-weight:600}
+.revealed .rps{display:block}
+
+.tray{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:18px;
+  position:sticky;top:20px}
+.tray h2{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+  margin:0 0 4px;font-weight:600}
+.count{font-family:var(--mono);font-size:12px;color:var(--ink-45);margin:0 0 14px}
+.card{width:100%;text-align:left;font:inherit;color:inherit;background:var(--paper);
+  border:1px solid var(--rule);border-left:4px solid var(--ink-45);border-radius:2px;
+  padding:11px 13px;margin-bottom:9px;cursor:pointer;transition:transform .12s,border-color .12s,box-shadow .12s}
+.card:hover{transform:translateX(3px)}
+.card:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
+.card.sel{border-left-color:var(--signal);box-shadow:0 0 0 2px rgba(232,17,45,.18);transform:translateX(3px)}
+.card b{display:block;font-weight:600;font-size:14px;margin-bottom:6px}
+.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:2px 12px;font-family:var(--mono);font-size:11px;color:var(--ink-70)}
+.metrics i{font-style:normal;color:var(--ink-45)}
+.msg{min-height:52px;font-size:13px;margin-top:12px;padding:10px 12px;border-radius:2px;
+  background:var(--paper);border-left:3px solid var(--rule);color:var(--ink-70)}
+.msg.ok{border-left-color:var(--star);background:var(--star-bg);color:#14503F}
+.msg.no{border-left-color:var(--signal);background:#FDECEE;color:#8E0E20}
+.msg:empty{display:none}
+
+.btn{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+  background:var(--ink);color:#fff;border:none;padding:11px 16px;border-radius:2px;cursor:pointer;
+  width:100%;margin-top:12px;font-weight:500}
+.btn:hover{background:#16276A}
+.btn:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
+.btn.ghost{background:transparent;color:var(--ink-70);border:1px solid var(--rule)}
+.btn.ghost:hover{background:var(--paper);color:var(--ink)}
+.btn[hidden]{display:none}
+
+.reveal{margin-top:32px;border-top:2px solid var(--ink);padding-top:22px}
+.reveal[hidden]{display:none}
+.reveal h2{font-size:24px;font-weight:700;letter-spacing:-.01em;margin:0 0 8px}
+.reveal p{max-width:70ch;color:var(--ink-70);margin:0 0 18px}
+.rank{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface);
+  border:1px solid var(--rule)}
+.rank th{font-family:var(--mono);font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+  text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule);color:var(--ink-45);font-weight:600}
+.rank td{padding:10px 12px;border-bottom:1px solid var(--rule)}
+.rank tr:last-child td{border-bottom:none}
+.rank .num{font-family:var(--mono);text-align:right;white-space:nowrap}
+.tag{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  padding:3px 7px;border-radius:2px;font-weight:600}
+.tag[data-q=star]{background:var(--star-bg);color:var(--star)}
+.tag[data-q=opp]{background:var(--opp-bg);color:var(--opp)}
+.tag[data-q=cow]{background:var(--cow-bg);color:var(--cow)}
+.tag[data-q=dog]{background:var(--dog-bg);color:var(--dog)}
+.rank tr.hi td{background:#FDECEE}
+.note{margin-top:18px;padding:16px 18px;background:var(--surface);border-left:4px solid var(--signal);
+  font-size:14px;max-width:78ch}
+.note b{font-weight:600}
+.plan{margin-top:34px;border-top:2px solid var(--ink);padding-top:22px}
+.plan h2{font-size:24px;font-weight:700;letter-spacing:-.01em;margin:0 0 8px}
+.plan>p{max-width:70ch;color:var(--ink-70);margin:0 0 22px}
+.qblock{margin-bottom:24px;background:var(--surface);border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+.qhead{padding:13px 16px;border-bottom:1px solid var(--rule)}
+.qhead h3{font-family:var(--mono);font-size:12px;letter-spacing:.11em;text-transform:uppercase;margin:0 0 4px;font-weight:600}
+.qhead p{margin:0;font-size:13px;color:var(--ink-70)}
+.qblock[data-q=star] .qhead{background:var(--star-bg)} .qblock[data-q=star] h3{color:var(--star)}
+.qblock[data-q=opp] .qhead{background:var(--opp-bg)}  .qblock[data-q=opp] h3{color:var(--opp)}
+.qblock[data-q=cow] .qhead{background:var(--cow-bg)}  .qblock[data-q=cow] h3{color:var(--cow)}
+.qblock[data-q=dog] .qhead{background:var(--dog-bg)}  .qblock[data-q=dog] h3{color:var(--dog)}
+.act{display:grid;grid-template-columns:190px 1fr;gap:0 20px;padding:13px 16px;border-bottom:1px solid var(--rule)}
+.act:last-child{border-bottom:none}
+@media(max-width:700px){.act{grid-template-columns:1fr;gap:4px}}
+.act .who b{display:block;font-weight:600;font-size:14px}
+.act .who span{font-family:var(--mono);font-size:11px;color:var(--ink-45)}
+.act .what b{display:block;font-weight:600;font-size:14px;margin-bottom:2px}
+.act .what p{margin:0;font-size:13.5px;color:var(--ink-70)}
+.act.flag{background:#FDF6F7}
+.act.flag .what b{color:var(--signal)}
+.split{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 26px}
+@media(max-width:700px){.split{grid-template-columns:1fr}}
+.share{background:var(--surface);border:1px solid var(--rule);border-top:3px solid var(--ink);padding:14px 16px;border-radius:2px}
+.share b{font-family:var(--mono);font-size:22px;display:block;line-height:1.2}
+.share span{font-size:13px;color:var(--ink-70)}
+.src{font-size:12.5px;color:var(--ink-45);margin-top:20px;max-width:74ch}
+.src a{color:var(--ink-70)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <p class="eyebrow">MKTG1525 · in-class activity</p>
+  <h1>Where does each page belong?</h1>
+  <p class="lede">Twelve pages from a skincare brand&rsquo;s blog. They arrive in random order, so position tells you nothing. Pick a page, then click the quadrant you think it belongs in. Revenue is on every card &mdash; but the matrix doesn&rsquo;t use it. Notice what that costs you.</p>
+  <div class="axes">
+    <span class="axis"><b>Vertical axis</b> <span>&middot; sessions &middot; median 1,500</span></span>
+    <span class="axis"><b>Horizontal axis</b> <span>&middot; conversion rate &middot; median 3.0%</span></span><span class="axis"><b>12 pages, so the median is the average of the 6th and 7th values</b></span>
+  </div>
+</header>
+
+<div class="cols">
+  <div class="boardwrap">
+    <span class="ylab">Sessions →</span>
+    <span class="xlab">Conversion rate →</span>
+    <div class="board" id="board">
+      <button class="cell" data-q="opp" type="button"><h3>Opportunities</h3><p class="rule">High traffic · low conversion</p><div class="drop" id="d-opp"></div></button>
+      <button class="cell" data-q="star" type="button"><h3>Stars</h3><p class="rule">High traffic · high conversion</p><div class="drop" id="d-star"></div></button>
+      <button class="cell" data-q="dog" type="button"><h3>Dogs</h3><p class="rule">Low traffic · low conversion</p><div class="drop" id="d-dog"></div></button>
+      <button class="cell" data-q="cow" type="button"><h3>Cash Cows</h3><p class="rule">Low traffic · high conversion</p><div class="drop" id="d-cow"></div></button>
+    </div>
+  </div>
+
+  <aside class="tray">
+    <h2>Pages to place</h2>
+    <p class="count" id="count">0 of 12 placed</p>
+    <div id="deck"></div>
+    <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    <button class="btn" id="revealBtn" type="button" hidden>Add revenue &amp; show the plan</button>
+    <button class="btn ghost" id="resetBtn" type="button">Start over</button>
+  </aside>
+</div>
+
+<section class="reveal" id="reveal" hidden>
+  <h2>The same twelve pages, ranked by revenue per session</h2>
+  <p>The matrix reads two numbers: sessions and conversion rate. Revenue is not one of them. Re-rank on what each visitor is actually worth and the order changes.</p>
+  <table class="rank">
+    <thead><tr><th>Page</th><th>Quadrant</th><th class="num">Conv. rate</th><th class="num">Revenue</th><th class="num">Per session</th></tr></thead>
+    <tbody id="rankBody"></tbody>
+  </table>
+  <div class="note" id="note"></div>
+</section>
+
+<section class="plan" id="plan" hidden>
+  <h2>What to do with each page</h2>
+  <p>Tactics below follow Dave Chaffey&rsquo;s prescriptions for each quadrant, applied to these twelve pages. Two entries deliberately depart from what the matrix recommends &mdash; they are marked in red.</p>
+  <div class="split">
+    <div class="share"><b>70%</b><span>Stars, plus the Bundle guide &mdash; optimise and promote what already performs, and make more like it</span></div>
+    <div class="share"><b>20%</b><span>Cash Cows and Opportunities &mdash; under-performing content with room to contribute more</span></div>
+    <div class="share"><b>10%</b><span>Dogs &mdash; or better, spend it creating less content like this</span></div>
+  </div>
+  <div id="planBody"></div>
+  <p class="src">Quadrant tactics adapted from Dave Chaffey, &ldquo;The Content Optimization Matrix&rdquo;, Smart Insights, 24 March 2022 &mdash; <a href="https://www.smartinsights.com/content-management/content-marketing-strategy/content-optimization-matrix/">smartinsights.com</a>. Page-level recommendations are worked examples built on this fictional dataset.</p>
+</section>
+</div>
+
+<script>
+var PAGES=[
+ {id:1,name:"Sunscreen guide",s:12000,c:24,r:1008,q:"opp",
+  ok:"The most-read page here and almost nobody buys. Found, not persuading.",
+  doh:"Check the audience, not the button",dot:"Chaffey's third Opportunity check. At 0.2% the CTA is unlikely to be the problem — an informational query is pulling readers who are not in-market. Add inline links, but expect to re-purpose this as top-of-funnel and measure it on email capture instead."},
+ {id:2,name:"Vitamin C guide",s:8000,c:320,r:13440,q:"star",
+  ok:"Above both medians. Found, and persuading. The strongest page on the sheet.",
+  doh:"Historical optimisation",dot:"Chaffey's headline Star tactic: refresh it so it holds its position in the SERPs, feature it in resource panels, and write related articles that link back to it. This is where the bulk of the 70% goes."},
+ {id:3,name:"Cleanser comparison",s:5000,c:150,r:5700,q:"star",
+  ok:"Exactly 3.0% — sitting on the conversion median. \u201cAt or above\u201d puts it in the top half.",
+  doh:"Refresh, then re-check the median",dot:"A Star by the narrowest margin — exactly on the conversion median. Same historical-optimisation playbook, but it is the first page that will drop out of this quadrant if others improve."},
+ {id:4,name:"Retinol guide",s:3000,c:96,r:4032,q:"star",
+  ok:"Clears both medians comfortably, if less dramatically than the Vitamin C guide.",
+  doh:"Surface it in the journey",dot:"Solid on both axes. Feature it more prominently in navigation and in-content panels, and build related content around it."},
+ {id:5,name:"Ingredient glossary",s:2200,c:33,r:1320,q:"opp",
+  ok:"Plenty of readers at 1.5%. A reference page people consult, not a page people buy from.",
+  doh:"Add in-line links",dot:"A reference page people consult rather than buy from. Chaffey's CTA fix applies literally here: link each ingredient entry to the product that contains it."},
+ {id:6,name:"Bundle guide",s:1600,c:32,r:5760,q:"opp",
+  ok:"Traffic clears the median; 2.0% does not. Hold on to this one \u2014 it comes back later.",
+  doh:"Treat it as a Star anyway",dot:"The matrix files it as an Opportunity, but it returns more per visitor than any actual Star. Promote it rather than fixing it — the conversion rate is low because bundles are a considered purchase, not because the page is failing."},
+ {id:7,name:"Serum how-to",s:1400,c:42,r:1890,q:"cow",
+  ok:"Also exactly 3.0%, but 1,400 sessions falls below the traffic median. Same rate as the Cleanser comparison, different quadrant \u2014 traffic alone separates them.",
+  doh:"Internal links and on-page SEO",dot:"100 sessions short of the traffic median. Chaffey's Cash Cow route: on-page optimisation plus internal links from the Vitamin C guide, which has traffic to spare."},
+ {id:8,name:"Routine builder",s:1100,c:55,r:2860,q:"cow",
+  ok:"One in twenty buys, but only 1,100 people arrive. Persuading, not found.",
+  doh:"Newsletter and paid media",dot:"Converts at 5% and earns $2.60 a visitor. Put it in the editorial calendar, share it through the newsletter, and consider paid media — the economics support buying traffic for it."},
+ {id:9,name:"Old cleanser page",s:900,c:9,r:378,q:"dog",
+  ok:"Below both medians. Neither getting found nor persuading.",
+  doh:"Redirect, do not optimise",dot:"Chaffey says individual Dogs are not worth optimising. This one has accumulated backlinks over its life, so redirect it to a live product rather than deleting it."},
+ {id:10,name:"Sunscreen FAQ",s:600,c:17,r:680,q:"dog",
+  ok:"2.8% is just short of the 3.0% median, and 600 sessions is well short. A Dog by a whisker on one axis.",
+  doh:"Merge it into the Sunscreen guide",dot:"Just short of the conversion median and covering the same topic as page 1. Chaffey suggests improving Dogs at the template or group level; here consolidation is the cheaper move."},
+ {id:11,name:"Refill explainer",s:400,c:40,r:2600,q:"cow",
+  ok:"One in ten visitors buys. The only problem is that 400 people see it.",
+  doh:"The highest-certainty win here",dot:"One in ten visitors buys. Every Cash Cow tactic applies: SEO, internal links, newsletter, partners, paid. Nothing else on the board converts like this."},
+ {id:12,name:"Pro account page",s:150,c:12,r:4080,q:"cow",
+  ok:"Tiny audience, very high conversion. Persuading, not found.",
+  doh:"Take it off this chart",dot:"B2B wholesale on a consumer content matrix — a different funnel with a different definition of conversion. Promote it to licensed estheticians through trade channels, and score it separately."}
+];
+var LABEL={star:"Stars",opp:"Opportunities",cow:"Cash Cows",dog:"Dogs"};
+var MED_S=1500,MED_C=3.0;
+var TOTAL=PAGES.length;
+var placed={},sel=null,revealed=false;
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+var order=shuffle(PAGES.slice());
+var cr=function(p){return p.c/p.s*100};
+var rps=function(p){return p.r/p.s};
+var money=function(n){return "$"+n.toLocaleString("en-US")};
+
+var deck=document.getElementById('deck'),msg=document.getElementById('msg'),
+    count=document.getElementById('count'),revealBtn=document.getElementById('revealBtn');
+
+function drawDeck(){
+  deck.innerHTML='';
+  order.forEach(function(p){
+    if(placed[p.id])return;
+    var b=document.createElement('button');
+    b.type='button';b.className='card'+(sel===p.id?' sel':'');
+    b.setAttribute('aria-pressed',sel===p.id?'true':'false');
+    b.innerHTML='<b>'+p.name+'</b><div class="metrics">'+
+      '<span><i>sessions</i> '+p.s.toLocaleString("en-US")+'</span>'+
+      '<span><i>conv.</i> '+p.c+'</span>'+
+      '<span><i>rate</i> '+cr(p).toFixed(1)+'%</span>'+
+      '<span><i>revenue</i> '+money(p.r)+'</span></div>';
+    b.onclick=function(){sel=(sel===p.id?null:p.id);drawDeck();
+      msg.className='msg';msg.textContent=sel?'Now click a quadrant.':'';armCells()};
+    deck.appendChild(b);
+  });
+  var n=Object.keys(placed).length;
+  count.textContent=n+' of '+TOTAL+' placed';
+  if(n===TOTAL){deck.innerHTML='<p style="font-size:13px;color:var(--ink-45);margin:0">All twelve placed.</p>';
+    revealBtn.hidden=revealed;}
+  armCells();
+}
+function armCells(){
+  document.querySelectorAll('.cell').forEach(function(c){
+    c.classList.toggle('armed',sel!==null);
+  });
+}
+function place(p,q){
+  placed[p.id]=true;
+  var host=document.getElementById('d-'+q);
+  var d=document.createElement('div');
+  d.className='slot';d.setAttribute('data-q',q);d.id='slot-'+p.id;
+  d.innerHTML='<b>'+p.name+'</b><span class="fig">'+p.s.toLocaleString("en-US")+
+    ' sessions · '+cr(p).toFixed(1)+'%</span>'+
+    '<span class="rps">'+rps(p).toFixed(2)+' per session</span><div class="bar"></div>';
+  host.appendChild(d);
+}
+document.querySelectorAll('.cell').forEach(function(cell){
+  cell.addEventListener('click',function(){
+    if(sel===null){msg.className='msg';msg.textContent='Pick a page from the list first.';return}
+    var p=PAGES.filter(function(x){return x.id===sel})[0];
+    var guess=cell.getAttribute('data-q');
+    if(guess===p.q){
+      place(p,guess);sel=null;
+      msg.className='msg ok';msg.innerHTML='<b>'+p.name+' → '+LABEL[p.q]+'.</b> '+p.ok;
+      cell.classList.add('flash-ok');setTimeout(function(){cell.classList.remove('flash-ok')},550);
+    }else{
+      var hiT=p.s>=MED_S,hiC=cr(p)>=MED_C;
+      msg.className='msg no';
+      msg.textContent='Not quite. '+p.s.toLocaleString("en-US")+' sessions is '+
+        (hiT?'above':'below')+' the 1,500 median, and '+cr(p).toFixed(1)+'% is '+
+        (hiC?'at or above':'below')+' the 3.0% median. Try again.';
+      cell.classList.add('flash-no');setTimeout(function(){cell.classList.remove('flash-no')},550);
+    }
+    drawDeck();
+  });
+});
+revealBtn.addEventListener('click',function(){
+  revealed=true;revealBtn.hidden=true;
+  var max=Math.max.apply(null,PAGES.map(rps));
+  PAGES.forEach(function(p){
+    var el=document.getElementById('slot-'+p.id);
+    if(!el)return;
+    el.classList.add('revealed');
+    setTimeout(function(){el.querySelector('.bar').style.width=(rps(p)/max*100)+'%'},40);
+  });
+  var body=document.getElementById('rankBody');
+  var sorted=PAGES.slice().sort(function(a,b){return rps(b)-rps(a)});
+  body.innerHTML='';
+  sorted.forEach(function(p){
+    var tr=document.createElement('tr');
+    if(p.id===6||p.id===2)tr.className='hi';
+    tr.innerHTML='<td>'+p.name+'</td>'+
+      '<td><span class="tag" data-q="'+p.q+'">'+LABEL[p.q]+'</span></td>'+
+      '<td class="num">'+cr(p).toFixed(1)+'%</td>'+
+      '<td class="num">'+money(p.r)+'</td>'+
+      '<td class="num">$'+rps(p).toFixed(2)+'</td>';
+    body.appendChild(tr);
+  });
+  document.getElementById('note').innerHTML=
+    '<b>Look at the two highlighted rows.</b> The Bundle guide was filed as an Opportunity — '+
+    'a problem page \u2014 because 2.0% falls below the conversion median. But it returns $3.60 per '+
+    'visitor against the Vitamin C guide\u2019s $1.68, and the Vitamin C guide is the best Star here. '+
+    'Its buyers simply spend more each. Conversion rate counts <b>how often</b>; it is silent on '+
+    '<b>how much</b>. A framework that plots only frequency will keep calling your most valuable '+
+    'page a problem.';
+  var QT={
+   star:["Stars &mdash; top performers","Historical optimisation to hold position in the SERPs, surfacing the content more prominently in the journey, and creating related content that links back."],
+   opp:["Opportunities &mdash; high potential","Three checks in order: are the calls-to-action clear enough, is the content itself good enough, and is it simply attracting the wrong audience?"],
+   cow:["Cash Cows &mdash; consistent performers","The constraint is reach, not persuasion. On-page SEO and backlinks, regular sharing through the editorial calendar and newsletter, and paid media."],
+   dog:["Dogs &mdash; low potential, low performance","Rarely worth optimising one at a time. Improve the template or the group, or create less content like it."]};
+  var pb=document.getElementById('planBody');pb.innerHTML='';
+  ['star','opp','cow','dog'].forEach(function(q){
+    var list=PAGES.filter(function(p){return p.q===q});
+    if(!list.length)return;
+    var blk=document.createElement('div');blk.className='qblock';blk.setAttribute('data-q',q);
+    var html='<div class="qhead"><h3>'+QT[q][0]+'</h3><p>'+QT[q][1]+'</p></div>';
+    list.forEach(function(p){
+      var flag=(p.id===6||p.id===12)?' flag':'';
+      html+='<div class="act'+flag+'"><div class="who"><b>'+p.name+'</b><span>'+
+        p.s.toLocaleString("en-US")+' sessions &middot; '+cr(p).toFixed(1)+'% &middot; $'+
+        rps(p).toFixed(2)+'/session</span></div><div class="what"><b>'+p.doh+'</b><p>'+p.dot+'</p></div></div>';
+    });
+    blk.innerHTML=html;pb.appendChild(blk);
+  });
+  document.getElementById('plan').hidden=false;
+  document.getElementById('reveal').hidden=false;
+  document.getElementById('reveal').scrollIntoView({behavior:'smooth',block:'start'});
+});
+document.getElementById('resetBtn').addEventListener('click',function(){
+  placed={};sel=null;revealed=false;order=shuffle(PAGES.slice());
+  ['star','opp','cow','dog'].forEach(function(q){document.getElementById('d-'+q).innerHTML=''});
+  document.getElementById('reveal').hidden=true;document.getElementById('plan').hidden=true;revealBtn.hidden=true;
+  msg.className='msg';msg.textContent='';drawDeck();
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+drawDeck();
+</script>
+</body>
+</html>
